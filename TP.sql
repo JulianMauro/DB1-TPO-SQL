@@ -77,6 +77,8 @@ CREATE TABLE Detalle_Inscripcion(
     CHECK (total > 0)
 );
 
+
+
 -- Carga de datos
 
 DROP TABLE Profesor
