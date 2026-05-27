@@ -118,3 +118,109 @@ INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario) VA
 (7, 3, 300000),
 (7, 5, 300000),
 (8, 4, 300000);
+
+-- Consultas
+
+SELECT * FROM Alumno
+ORDER BY apellido;
+
+SELECT DISTINCT metodo_pago FROM Inscripcion;
+
+SELECT nombre, apellido, sueldo, (sueldo + sueldo * 20 / 100) AS sueldo_nuevo FROM Profesor;
+
+SELECT * FROM Profesor
+WHERE apellido LIKE '%e%';
+
+SELECT * FROM Alumno
+WHERE email LIKE '%gmail.com';
+
+SELECT a.nombre, a.apellido, i.fecha_inscripcion, i.metodo_pago FROM Alumno a
+INNER JOIN Inscripcion i ON a.legajo = i.id_alumno;
+
+SELECT m.nombre_materia, CONCAT(p.apellido,' ', p.nombre) AS 'profesor'FROM Materia m
+INNER JOIN Profesor p ON m.id_profesor = p.id_profesor;
+
+SELECT CONCAT(a.apellido, ' ', a.nombre) AS 'alumno', m.nombre_materia FROM Alumno a
+INNER JOIN Inscripcion i ON a.legajo = i.id_alumno
+INNER JOIN Detalle_Inscripcion di ON i.id_inscripcion = di.id_inscripcion
+INNER JOIN Materia m ON di.id_materia = m.id_materia;
+
+SELECT CONCAT(a.apellido, ' ', a.nombre) AS 'alumno', i.id_inscripcion FROM Alumno a
+LEFT JOIN Inscripcion i ON a.legajo = i.id_alumno;
+
+SELECT m.nombre_materia, di.id_detalle FROM Materia m
+LEFT JOIN Detalle_Inscripcion di ON m.id_materia = di.id_materia;
+
+SELECT metodo_pago, COUNT(*) AS 'cantidad' FROM Inscripcion
+GROUP BY metodo_pago;
+
+SELECT categoria, AVG(sueldo) AS 'sueldo_prom' FROM Profesor
+GROUP BY categoria;
+
+SELECT categoria, COUNT(*) AS 'cantidad_materia' FROM Materia
+GROUP BY categoria;
+
+SELECT metodo_pago FROM Inscripcion
+GROUP BY metodo_pago
+HAVING COUNT(*) > 1;
+
+SELECT categoria FROM Materia
+GROUP BY categoria
+HAVING COUNT(*) > 2;
+
+SELECT metodo_pago, SUM(total) AS 'total_recaudo' FROM Inscripcion
+GROUP BY metodo_pago
+HAVING SUM(total) > 500000;
+
+SELECT CONCAT(p1.apellido, ' ', p1.nombre) AS 'profesor' FROM Profesor p1
+WHERE p1.sueldo > (
+    SELECT AVG(p2.sueldo) FROM Profesor p2
+);
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'alumno' FROM Alumno
+WHERE legajo NOT IN (
+    SELECT id_alumno FROM Inscripcion
+);
+
+SELECT nombre_materia FROM Materia
+WHERE precio = (
+    SELECT MAX(precio) FROM Materia
+);
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'alumno' FROM Alumno
+WHERE legajo IN (
+    SELECT id_alumno FROM Inscripcion
+    WHERE id_inscripcion IN (
+        SELECT id_inscripcion FROM Detalle_Inscripcion
+        WHERE id_materia IN (
+            SELECT id_materia FROM Materia
+            WHERE nombre_materia = 'Base de Datos I'
+        )
+    )
+)
+INTERSECT
+SELECT CONCAT(apellido, ' ', nombre) AS 'alumno' FROM Alumno
+WHERE legajo IN (
+    SELECT id_alumno FROM Inscripcion
+    WHERE id_inscripcion IN (
+        SELECT id_inscripcion FROM Detalle_Inscripcion
+        WHERE id_materia IN (
+            SELECT id_materia FROM Materia
+            WHERE nombre_materia = 'Programacion I'
+        )
+    )
+)
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'profesor' FROM Profesor
+WHERE id_profesor IN (
+    SELECT id_profesor FROM Materia
+    WHERE categoria = 'Informatica'
+);
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'alumno' FROM Alumno
+WHERE legajo IN (
+    SELECT id_alumno FROM Inscripcion
+    WHERE total > (
+        SELECT AVG(total) FROM Inscripcion
+    )
+);
