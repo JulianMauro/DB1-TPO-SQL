@@ -62,11 +62,7 @@ CREATE TABLE Detalle_Inscripcion(
     CONSTRAINT check_precio_uni CHECK (precio_unitario > 0)
 );
 
-
-
-
 -- INSERTS CARGA DE DATOS
-
 
 INSERT INTO Alumno (nombre, apellido, dni, email) VALUES
 ('Tobias', 'Martinez', 43123456, 'tobias.martinez@gmail.com'),
@@ -111,21 +107,14 @@ INSERT INTO Inscripcion (id_alumno, fecha_inscripcion, metodo_pago, cantidad_mat
 INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario) VALUES
 (1, 1, 300000),
 (1, 2, 300000),
-
 (2, 3, 300000),
-
 (3, 1, 300000),
 (3, 4, 300000),
 (3, 5, 300000),
-
 (4, 6, 300000),
-
 (5, 2, 300000),
 (5, 7, 300000),
-
 (6, 8, 300000),
-
 (7, 3, 300000),
 (7, 5, 300000),
-
 (8, 4, 300000);
