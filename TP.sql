@@ -224,3 +224,40 @@ WHERE legajo IN (
         SELECT AVG(total) FROM Inscripcion
     )
 );
+
+SELECT CONCAT(p.apellido, ' ', p.nombre) AS 'profesor' FROM Profesor p
+WHERE EXISTS (
+    SELECT 1 FROM Materia m
+    WHERE p.id_profesor = m.id_profesor
+);
+
+SELECT CONCAT(a.apellido, ' ', a.nombre) AS 'alumno' FROM Alumno a
+WHERE EXISTS (
+    SELECT 1 FROM Inscripcion i
+    WHERE a.legajo = i.id_alumno
+);
+
+SELECT CONCAT(p1.apellido, ' ', p1.nombre) AS 'profesor' FROM Profesor p1
+WHERE p1.sueldo > (
+    SELECT AVG(p2.sueldo) FROM Profesor p2
+    WHERE p1.categoria = p2.categoria
+);
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'alumno' FROM Alumno 
+WHERE legajo IN (
+    SELECT i1.id_alumno FROM Inscripcion i1
+    WHERE i1.total > (
+        SELECT AVG(i2.total) FROM Inscripcion i2
+        WHERE i1.metodo_pago = i2.metodo_pago
+    )
+);
+
+SELECT nombre_materia, (
+    SELECT COUNT(*) FROM Detalle_Inscripcion i
+    WHERE i.id_materia = id_materia
+) AS 'cant_inscrip' FROM Materia;
+
+SELECT CONCAT(apellido, ' ', nombre) AS 'profesor', (
+    SELECT COUNT(*) FROM Materia m
+    WHERE m.id_profesor = id_profesor
+) AS 'cant_materia' FROM Profesor;
