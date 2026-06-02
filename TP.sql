@@ -413,5 +413,65 @@ End
 End;
 Go
 
+--3) Actualizar cantidad materias al insertar una instancia de detalle_inscripcion
+CREATE TRIGGER TR_Actualizar_Cantidad_Materias_Al_Agregar_Inscripcion On Detalle_Inscripcion
+AFTER INSERT
+AS 
+BEGIN 	
+	UPDATE Inscripcion
+	Set cantidad_materias=(Select count(*) From Detalle_Inscripcion d Where (d.id_inscripcion = i.id_inscripcion))
+	From Inscripcion i 
+	Where i.id_inscripcion IN (Select id_inscripcion From inserted);
+End;
+Go
+
+--4) Actualizar cantidad materias al eliminar una instancia de detalle_insciprcion
+CREATE TRIGGER TR_Actualizar_Cantidad_Materias_Al_Eliminar_Inscripcion On Detalle_Inscripcion
+AFTER Delete
+AS 
+BEGIN 	
+	UPDATE Inscripcion
+	Set cantidad_materias=(Select count(*) From Detalle_Inscripcion d Where (d.id_inscripcion = i.id_inscripcion))
+	From Inscripcion i 
+	Where i.id_inscripcion IN (Select id_inscripcion From deleted);
+End;
+Go
+
+--5) Verificar inscripciones duplicadas a materia
+CREATE TRIGGER TR_Validar_Inscripcion_Duplicada On Detalle_Inscripcion
+AFTER Insert
+AS 
+BEGIN
+	Declare @id_alumno int;
+	Declare @id_materia int;
+	Declare @id_inscripcion int;
+
+	Select 
+	@id_materia = id_materia,
+	@id_inscripcion = id_inscripcion
+	From inserted
+	
+	Select 
+	@id_alumno = id_alumno
+	From Inscripcion Where Inscripcion.id_inscripcion = @id_inscripcion 
+
+
+
+	IF (
+        SELECT COUNT(*)
+        FROM Detalle_Inscripcion d
+        JOIN Inscripcion i
+            ON i.id_inscripcion = d.id_inscripcion
+        WHERE i.id_alumno = @id_alumno
+          AND d.id_materia = @id_materia
+    ) > 1
+	Begin
+		Raiserror('El alumno ya se encuentra inscripto a la materia',16,1);
+		Rollback transaction
+	End
+End;
+Go
+
+
 
 
