@@ -63,8 +63,6 @@ CREATE TABLE Detalle_Inscripcion(
 );
 
 
-
-
 -- INSERTS CARGA DE DATOS
 
 
@@ -131,7 +129,7 @@ INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario) VA
 (8, 4, 300000);
 
 
-
+-----------------------------------------------------------------------
 -- ETAPA 5
 -- CONSULTAS SQL
 
@@ -271,9 +269,52 @@ LEFT JOIN Detalle_Inscripcion as d
 ON m.id_materia = d.id_materia;
 
 
--- ME FALTAN SUBCONSULTAS
+-- SUBCONSULTAS
+
+--21) Mostrar alumnos cuyo total gastado sea mayor al promeido general de inscripciones (ESCALAR)
+SELECT a.legajo, a.nombre, a.apellido, SUM(i.total) as total_gastado
+FROM Alumno as a
+JOIN Inscripcion as i 
+ON a.legajo = i.id_alumno
+GROUP BY a.legajo, a.nombre, a.apellido
+HAVING SUM(i.total) > (SELECT AVG(total)
+FROM Inscripcion
+);
+
+--22) Mostrar alumnos que realizaron al menos una inscripción (IN)
+SELECT legajo, nombre, apellido, email
+FROM Alumno
+WHERE legajo IN ( SELECT id_alumno
+FROM Inscripcion
+);
+
+--23) Mostrar alumnos que tienen inscripciones registradas (EXISTS)
+SELECT a.legajo, a.nombre, a.apellido
+FROM Alumno as a
+WHERE EXISTS (SELECT 1
+FROM Inscripcion as i
+WHERE i.id_alumno = a.legajo
+);
+
+--24) Mostrar materias que tienen al menos un detalle de inscripción (EXISTS)
+SELECT m.id_materia, m.nombre_materia, m.categoria
+FROM Materia as m
+WHERE EXISTS (SELECT 1
+FROM Detalle_Inscripcion as d
+WHERE d.id_materia = m.id_materia
+);
+
+--25) Mostrar alumnos cuyo total gastado sea mayor a $200.000 (CORRELACIONADA)
+SELECT a.legajo, a.nombre, a.apellido
+FROM Alumno as a
+WHERE (SELECT SUM(i.total)
+FROM Inscripcion as i
+WHERE i.id_alumno = a.legajo
+) > 200000;
 
 
+
+-------------------------------------------------------------------------
 -- ETAPA 6
 -- VISTAS
 
