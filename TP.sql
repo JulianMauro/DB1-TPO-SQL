@@ -366,3 +366,52 @@ CREATE VIEW vista_ventas_por_metodo_pago as
 SELECT metodo_pago, COUNT(id_inscripcion) as cantidad_inscripciones, SUM(total) as total_recaudado, AVG(total) as promedio_por_inscripcion
 FROM Inscripcion
 GROUP BY metodo_pago;
+
+-------------------------------------------------------------------------
+-- ETAPA 8
+-- Triggers
+
+--1) Validar que el mail sea válido para Alumnos (cumpla con formato requerido)
+CREATE TRIGGER TR_Validar_Formato_Email_Alumnos On Alumno
+AFTER INSERT
+AS 
+BEGIN
+
+DECLARE @email VARCHAR(60);
+
+Select 
+	@email = email
+From inserted
+
+If @email not like '%_@_%._%'
+Begin 
+	Raiserror('El email es inválido',16,1); --16 es la severidad y 1 el estado
+	Rollback transaction
+End
+
+End;
+Go
+
+--2) Validar que el mail sea válido para Profesores
+CREATE TRIGGER TR_Validar_Formato_Email_Profesores On Profesor
+AFTER INSERT
+AS 
+BEGIN
+
+DECLARE @email VARCHAR(60);
+
+Select 
+	@email = email
+From inserted
+
+If @email not like '%_@_%._%'
+Begin 
+	Raiserror('El email es inválido',16,1); --16 es la severidad y 1 el estado
+	Rollback transaction
+End
+
+End;
+Go
+
+
+
