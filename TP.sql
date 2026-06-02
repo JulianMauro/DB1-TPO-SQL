@@ -1,4 +1,4 @@
--- Etapa 4:
+-- ETAPA 4
 -- Creacion de la base de datos
 
 CREATE DATABASE TP;
@@ -129,3 +129,199 @@ INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario) VA
 (7, 5, 300000),
 
 (8, 4, 300000);
+
+
+
+-- ETAPA 5
+-- CONSULTAS SQL
+
+
+-- CONSULTAS BASICAS
+
+--1) Mostrar todos los alumnos registrados indicando nombre, apellido y email
+SELECT nombre, apellido, email
+FROM Alumno;
+
+--2) Listar las materias pertenecientes a la categoría "Informatica"
+SELECT nombre_materia, categoria
+FROM Materia
+WHERE categoria = 'Informatica';
+
+--3) Mostrar los profesores cuyo sueldo sea mayor a $1.200.000
+SELECT nombre, apellido, sueldo
+FROM Profesor
+WHERE sueldo > 1200000;
+
+--4) Obtener las materias que comienzan después del 15/08/2026
+SELECT nombre_materia, fecha_inicio
+FROM Materia
+WHERE fecha_inicio > '2026-08-15';
+
+--5) Listar los alumnos cuyo email contenga "gmail"
+SELECT legajo, nombre, apellido, email
+FROM Alumno
+WHERE email LIKE '%gmail%';
+
+
+-- CONSULTAS CON JOIN
+
+--6) Mostrar cada materia junto con el nombre y apellido de su profesor
+SELECT m.nombre_materia, p.nombre, p.apellido
+FROM Materia as m
+JOIN Profesor as p
+ON m.id_profesor = p.id_profesor;
+
+--7) Listar las inscripciones realizadas indicando nombre del alumno y fecha de inscripción
+SELECT a.nombre, a.apellido, i.fecha_inscripcion
+FROM Inscripcion as i
+JOIN Alumno as a
+ON a.legajo = i.id_alumno;
+
+--8) Mostrar el detalle de inscripción indicando alumno, materia y precio unitario
+SELECT a.nombre, a.apellido, m.nombre_materia, d.precio_unitario
+FROM Detalle_Inscripcion as d
+JOIN Inscripcion as i
+ON d.id_inscripcion = i.id_inscripcion
+JOIN Alumno as a
+ON i.id_alumno = a.legajo
+JOIN Materia as m
+ON d.id_materia = m.id_materia;
+
+--9) Listar todas las materias junto con la cantidad de alumnos inscriptos
+SELECT m.id_materia, m.nombre_materia, COUNT(DISTINCT i.id_alumno) as cantidad_alumnos_inscriptos
+FROM Materia as m
+LEFT JOIN Detalle_Inscripcion as d 
+ON m.id_materia = d.id_materia
+LEFT JOIN Inscripcion as i 
+ON d.id_inscripcion = i.id_inscripcion
+GROUP BY m.id_materia, m.nombre_materia;
+
+--10) Mostrar las inscripciones junto con el método de pago utilizado
+SELECT id_inscripcion, id_alumno, fecha_inscripcion, metodo_pago, cantidad_materias, total
+FROM Inscripcion;
+
+
+-- CONSULTAS CON GROUP BY
+
+--11) Obtener la cantidad de materias por categoría
+SELECT categoria, COUNT(*) as cantidad_materias
+FROM Materia
+GROUP BY categoria;
+
+--12) Mostrar la cantidad de materias dictadas por cada profesor
+SELECT p.id_profesor, p.nombre, p.apellido, COUNT(m.id_materia) as cantidad_materias
+FROM Profesor as p
+LEFT JOIN Materia as m 
+ON p.id_profesor = m.id_profesor
+GROUP BY p.id_profesor, p.nombre, p.apellido;
+
+--13) Calcular el total gastado por cada alumno
+SELECT a.legajo, a.nombre, a.apellido, (SUM(i.total)) as total_gastado
+FROM Alumno as a
+LEFT JOIN Inscripcion as i 
+ON a.legajo = i.id_alumno
+GROUP BY a.legajo, a.nombre, a.apellido;
+
+--14) Obtener el promedio de importe de las inscripciones según método de pago
+SELECT metodo_pago, AVG(total) as promedio_importe
+FROM Inscripcion
+GROUP BY metodo_pago;
+
+--15) Mostrar la cantidad de inscripciones realizadas por cada alumno
+SELECT a.legajo, a.nombre, a.apellido, COUNT(i.id_inscripcion) as cantidad_inscripciones
+FROM Alumno as a
+LEFT JOIN Inscripcion as i ON a.legajo = i.id_alumno
+GROUP BY a.legajo, a.nombre, a.apellido;
+
+-- CONSULTAS CON HAVING
+
+--16) Mostrar los alumnos que realizaron más de una inscripción
+SELECT a.legajo, a.nombre, a.apellido, COUNT(i.id_inscripcion) as cantidad_inscripciones
+FROM Alumno as a
+JOIN Inscripcion as i ON a.legajo = i.id_alumno
+GROUP BY a.legajo, a.nombre, a.apellido
+HAVING COUNT(i.id_inscripcion) > 1;
+
+--17) Listar los profesores que dictan más de una materia
+SELECT p.id_profesor, p.nombre, p.apellido, COUNT(m.id_materia) as cantidad_materias
+FROM Profesor as p
+JOIN Materia as m ON p.id_profesor = m.id_profesor
+GROUP BY p.id_profesor, p.nombre, p.apellido
+HAVING COUNT(m.id_materia) > 1;
+
+--18) Mostrar las categorías que tengan más de una materia registrada
+SELECT categoria, COUNT(*) as cantidad_materias
+FROM Materia
+GROUP BY categoria
+HAVING COUNT(*) > 1;
+
+
+-- CONSULTAS CON LEFT JOIN
+
+--19) Mostrar todos los alumnos junto con sus inscripciones, incluso aquellos que no tienen ninguna
+SELECT a.legajo, a.nombre, a.apellido, i.id_inscripcion, i.fecha_inscripcion, i.metodo_pago, i.total
+FROM Alumno as a
+LEFT JOIN Inscripcion as i 
+ON a.legajo = i.id_alumno;
+
+--20) Mostrar todas las materias junto con sus detalles de inscripción, incluso aquellas que nunca fueron elegidas
+SELECT m.id_materia, m.nombre_materia, d.id_detalle, d.id_inscripcion, d.precio_unitario
+FROM Materia as m
+LEFT JOIN Detalle_Inscripcion as d 
+ON m.id_materia = d.id_materia;
+
+
+-- ME FALTAN SUBCONSULTAS
+
+
+-- ETAPA 6
+-- VISTAS
+
+--1) Vista de alumnos con sus inscripciones
+CREATE VIEW vista_alumnos_inscripciones as
+SELECT a.legajo, a.nombre, a.apellido, i.id_inscripcion, i.fecha_inscripcion, i.metodo_pago, i.cantidad_materias, i.total
+FROM Alumno as a
+JOIN Inscripcion as i 
+ON a.legajo = i.id_alumno;
+
+--2) Vista de detalle completo de inscripciones
+CREATE VIEW vista_detalle_inscripciones_completo AS
+SELECT i.id_inscripcion, a.legajo, a.nombre, a.apellido, m.nombre_materia, m.categoria, d.precio_unitario, i.fecha_inscripcion, i.metodo_pago
+FROM Detalle_Inscripcion as d
+JOIN Inscripcion as i 
+ON d.id_inscripcion = i.id_inscripcion
+JOIN Alumno as a 
+ON i.id_alumno = a.legajo
+JOIN Materia as m 
+ON d.id_materia = m.id_materia;
+
+--3) Vista de materias con profesor
+CREATE VIEW vista_materias_profesor as
+SELECT m.id_materia, m.nombre_materia, m.categoria, m.fecha_inicio, m.cupos, m.precio, p.nombre, p.apellido
+FROM Materia as m
+JOIN Profesor as p 
+ON m.id_profesor = p.id_profesor;
+
+--4) Vista del total gastado por alumno
+CREATE VIEW vista_total_gastado_alumno as
+SELECT a.legajo, a.nombre, a.apellido, SUM(i.total) as total_gastado
+FROM Alumno as a
+LEFT JOIN Inscripcion as i 
+ON a.legajo = i.id_alumno
+GROUP BY a.legajo, a.nombre, a.apellido;
+
+--5) Vista de cantidad de inscriptos por materia
+CREATE VIEW vista_inscriptos_por_materia as
+SELECT m.id_materia, m.nombre_materia, COUNT(DISTINCT i.id_alumno) as cantidad_alumnos_inscriptos
+FROM Materia as m
+LEFT JOIN Detalle_Inscripcion as d 
+ON m.id_materia = d.id_materia
+LEFT JOIN Inscripcion as i 
+ON d.id_inscripcion = i.id_inscripcion
+GROUP BY m.id_materia, m.nombre_materia;
+
+--6) Vista de inscripciones por metodo de pago
+CREATE VIEW vista_ventas_por_metodo_pago as
+SELECT metodo_pago, COUNT(id_inscripcion) as cantidad_inscripciones, SUM(total) as total_recaudado, AVG(total) as promedio_por_inscripcion
+FROM Inscripcion
+GROUP BY metodo_pago;
