@@ -157,12 +157,3 @@ Conceptualmente existe una relación N:M entre Alumno y Materia, la cual se resu
 * Procedimientos almacenados.
 * Triggers.
 * Normalización de la base de datos.
-
----
-
-## Tecnologías Utilizadas
-
-* SQL Server
-* SQL (DDL y DML)
-* Modelo Relacional
-* Diagrama Entidad-Relación (DER)
