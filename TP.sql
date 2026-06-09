@@ -76,6 +76,10 @@ INSERT INTO Alumno (nombre, apellido, dni, email) VALUES
 ('Benjamin', 'Prat', 49789012, 'benjamin.prat@hotmail.com'),
 ('Sofia', 'Gomez', 40890123, 'sofia.gomez@gmail.com');
 
+-- Alumno sin inscripción, para probar LEFT JOIN
+INSERT INTO Alumno (nombre, apellido, dni, email)
+VALUES ('Nicolas', 'Aguirre', 42111222, 'nicolas.aguirre@gmail.com');
+
 INSERT INTO Profesor (nombre, apellido, email, categoria, sueldo) VALUES
 ('Juan', 'Montero', 'juan.montero@gmail.com', 'Base de Datos', 1200000),
 ('Gustavo', 'Escandell', 'gustavo.escandell@gmail.com', 'Programacion', 1500000),
@@ -96,6 +100,11 @@ INSERT INTO Materia (nombre_materia, categoria, fecha_inicio, id_profesor, cupos
 ('Arquitectura', 'Informatica', '2026-08-25', 12006, 20, 300000),
 ('Administracion', 'Administracion', '2026-08-28', 12007, 45, 300000);
 
+-- Materia nueva sin inscriptos y con profesor ya existente,
+-- para que haya un profesor con más de una materia
+INSERT INTO Materia (nombre_materia, categoria, fecha_inicio, id_profesor, cupos, precio)
+VALUES ('Modelado de Datos', 'Informatica', '2026-09-05', 12000, 20, 280000);
+
 INSERT INTO Inscripcion (id_alumno, fecha_inscripcion, metodo_pago, cantidad_materias, total) VALUES
 (64000, '2026-04-01', 'TRANSFERENCIA', 2, 600000),
 (64001, '2026-04-02', 'EFECTIVO', 1, 300000),
@@ -105,6 +114,11 @@ INSERT INTO Inscripcion (id_alumno, fecha_inscripcion, metodo_pago, cantidad_mat
 (64005, '2026-04-06', 'EFECTIVO', 1, 300000),
 (64006, '2026-04-07', 'CREDITO', 2, 600000),
 (64007, '2026-04-08', 'DEBITO', 1, 300000);
+
+-- Segunda inscripción para un alumno existente,
+-- para que la consulta HAVING de alumnos con más de una inscripción devuelva resultado
+INSERT INTO Inscripcion (id_alumno, fecha_inscripcion, metodo_pago, cantidad_materias, total)
+VALUES (64000, '2026-04-10', 'DEBITO', 1, 300000);
 
 INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario) VALUES
 (1, 1, 300000),
@@ -145,7 +159,7 @@ FROM Alumno;
 SELECT * FROM Alumno
 ORDER BY apellido;
 
---3) Mostrar las distintas carreras
+--3) Mostrar los distintos métodos de pago utilizados
 SELECT DISTINCT metodo_pago FROM Inscripcion;
 
 --4) Listar las materias pertenecientes a la categoría "Informatica"
@@ -283,7 +297,7 @@ ON m.id_materia = d.id_materia;
 
 -- SUBCONSULTAS
 
---24) Mostrar alumnos cuyo total gastado sea mayor al promeido general de inscripciones (ESCALAR)
+--24) Mostrar alumnos cuyo total gastado sea mayor al promedio general de inscripciones (ESCALAR)
 SELECT a.legajo, a.nombre, a.apellido, SUM(i.total) as total_gastado
 FROM Alumno as a
 JOIN Inscripcion as i 
@@ -349,6 +363,30 @@ WHERE legajo IN (
     )
 )
 
+--30) Mostrar alumnos sin inscripción
+SELECT a.legajo, a.nombre, a.apellido, a.email
+FROM Alumno a
+LEFT JOIN Inscripcion i
+ON a.legajo = i.id_alumno
+WHERE i.id_inscripcion IS NULL;
+
+--31) Mostrar materias sin alumnos inscriptos
+SELECT m.id_materia, m.nombre_materia, m.categoria
+FROM Materia m
+LEFT JOIN Detalle_Inscripcion d
+ON m.id_materia = d.id_materia
+WHERE d.id_detalle IS NULL;
+
+--31) Recaudación total por categoría de materia
+SELECT 
+    m.categoria,
+    SUM(d.precio_unitario) AS recaudacion_total
+FROM Detalle_Inscripcion d
+JOIN Materia m
+ON d.id_materia = m.id_materia
+GROUP BY m.categoria
+ORDER BY recaudacion_total DESC;
+
 
 -------------------------------------------------------------------------
 -- ETAPA 6
@@ -409,6 +447,31 @@ CREATE VIEW vista_ventas_por_metodo_pago as
 SELECT metodo_pago, COUNT(id_inscripcion) as cantidad_inscripciones, SUM(total) as total_recaudado, AVG(total) as promedio_por_inscripcion
 FROM Inscripcion
 GROUP BY metodo_pago;
+GO
+
+--7) Vista de recaudacion por fecha
+CREATE PROCEDURE SP_Recaudacion_Por_Fechas
+    @fecha_desde DATE,
+    @fecha_hasta DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_desde > @fecha_hasta
+    BEGIN
+        RAISERROR('La fecha desde no puede ser mayor a la fecha hasta', 16, 1);
+        RETURN;
+    END
+
+    SELECT 
+        metodo_pago,
+        COUNT(id_inscripcion) AS cantidad_inscripciones,
+        SUM(total) AS total_recaudado,
+        AVG(total) AS promedio_por_inscripcion
+    FROM Inscripcion
+    WHERE fecha_inscripcion BETWEEN @fecha_desde AND @fecha_hasta
+    GROUP BY metodo_pago;
+END;
 GO
 
 -------------------------------------------------------------------------
@@ -653,7 +716,7 @@ BEGIN
 End;
 Go
 
---4) Actualizar cantidad materias al eliminar una instancia de detalle_insciprcion
+--4) Actualizar cantidad de materias al eliminar una instancia de detalle_inscripcion
 CREATE TRIGGER TR_Actualizar_Cantidad_Materias_Al_Eliminar_Inscripcion On Detalle_Inscripcion
 AFTER Delete
 AS 
@@ -724,3 +787,27 @@ EXEC SP_Alta_Inscripcion 64001, 'CREDITO', 1, 2;
 --     anti-duplicados lo rechaza y la transaccion se revierte (no queda a medias).
 EXEC SP_Alta_Inscripcion 64001, 'CREDITO', 3;
 
+-- 7) Consultar cuanto se recauda en un rango de fechas
+EXEC SP_Recaudacion_Por_Fechas '2026-04-01', '2026-04-30';
+
+------------------------------------------------------------------------
+-- PRUEBAS DE VISTAS
+
+SELECT * FROM vista_alumnos_inscripciones;
+SELECT * FROM vista_detalle_inscripciones_completo;
+SELECT * FROM vista_materias_profesor;
+SELECT * FROM vista_total_gastado_alumno;
+SELECT * FROM vista_inscriptos_por_materia;
+SELECT * FROM vista_ventas_por_metodo_pago;
+SELECT * FROM vista_cupos_disponibles;
+
+------------------------------------------------------------------------
+-- PRUEBAS DE TRIGGERS
+
+-- Debe fallar por email inválido
+INSERT INTO Alumno (nombre, apellido, dni, email)
+VALUES ('Prueba', 'Email', 40999111, 'email_invalido');
+
+-- Debe fallar por inscripción duplicada a una materia
+INSERT INTO Detalle_Inscripcion (id_inscripcion, id_materia, precio_unitario)
+VALUES (1, 1, 300000);
