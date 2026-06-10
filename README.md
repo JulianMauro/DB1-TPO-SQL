@@ -2,41 +2,158 @@
 
 Trabajo Práctico Integrador de **Base de Datos** (Ingeniería de Datos I - UADE).
 
-Este repositorio contiene el diseño e implementación de una base de datos relacional
-para un sistema de gestión académica: administración de **alumnos**, **profesores**,
-**materias** e **inscripciones**.
+# Sistema de Gestión Académica
 
-## Universo del discurso
+## Descripción del Proyecto
 
-El sistema modela una institución educativa que necesita organizar su información de
-alumnos, profesores, oferta de materias y las inscripciones de los alumnos a esas
-materias, resolviendo problemas de redundancia, inconsistencias y falta de control.
+Este proyecto consiste en el diseño e implementación de una base de datos relacional para una institución educativa que administra alumnos, profesores, materias e inscripciones.
 
-## Modelo de datos
+El objetivo principal es centralizar la información académica, reducir la redundancia de datos, garantizar la integridad de la información y facilitar la gestión de consultas, reportes e inscripciones.
 
-El esquema implementado en SQL Server está compuesto por las siguientes tablas:
+La base de datos fue desarrollada en SQL Server utilizando tablas relacionadas mediante claves primarias y foráneas, restricciones de integridad, vistas, procedimientos almacenados, triggers y consultas avanzadas.
 
-| Tabla | Descripción |
-|-------|-------------|
-| `Alumno` | Datos del alumno (legajo, nombre, apellido, DNI, email). |
-| `Profesor` | Datos del profesor (id, nombre, apellido, email, categoría, sueldo). |
-| `Materia` | Oferta de materias (id, nombre, categoría, fecha de inicio, cupos, precio) y su profesor a cargo. |
-| `Inscripcion` | Inscripción de un alumno a una materia (fecha, método de pago, total). |
-| `Detalle_Inscripcion` | Detalle de cada inscripción (materia, cantidad, precio unitario, total). |
+---
 
-Incluye claves primarias y foráneas, columnas `IDENTITY` y restricciones de integridad
-(`CHECK`, `NOT NULL`) sobre montos, cupos y métodos de pago.
+## Problemática
 
-## Contenido del repositorio
+Antes de la implementación del sistema, la información académica presentaba diversos inconvenientes:
 
-- [`TP.sql`](TP.sql) — Script SQL con la creación de la base de datos, tablas y restricciones.
+* Información dispersa y difícil de administrar.
+* Duplicación de datos.
+* Falta de control sobre las inscripciones realizadas.
+* Dificultad para obtener reportes académicos y administrativos.
+* Posibilidad de inconsistencias en la carga de datos.
 
-## Estado / próximos pasos
+---
 
-Según la consigna del TP, el trabajo abarca: carga de datos, consultas (básicas, JOIN,
-`GROUP BY`/`HAVING`, subconsultas), vistas, procedimientos almacenados y triggers.
+## Objetivos
 
-## Documentación externa
+* Centralizar la información académica.
+* Mejorar la integridad y consistencia de los datos.
+* Facilitar la administración de alumnos, profesores y materias.
+* Permitir el registro y seguimiento de inscripciones.
+* Obtener reportes mediante consultas SQL, vistas y procedimientos almacenados.
 
-- 📄 **Documento del TP (Google Docs):** https://docs.google.com/document/d/1DQAHI1LZzGdfU5FOPqGwBLZ-Hv77GzDH6z-bOcB7MeQ/edit?usp=sharing
-- 📊 **Diagrama Entidad-Relación (Lucidchart):** https://lucid.app/lucidchart/a8026e5e-6242-41a3-97ed-6ef640ae7324/edit?viewport_loc=538%2C-3445%2C4952%2C3605%2C0_0&invitationId=inv_27c706f4-239c-4391-9868-5c39dc6bc23e
+---
+
+## Entidades Principales
+
+### Alumno
+
+Almacena la información de los estudiantes registrados en el sistema.
+
+Atributos:
+
+* Legajo
+* Nombre
+* Apellido
+* DNI
+* Email
+
+### Profesor
+
+Almacena la información de los docentes.
+
+Atributos:
+
+* ID Profesor
+* Nombre
+* Apellido
+* Email
+* Categoría
+* Sueldo
+
+### Materia
+
+Representa las materias ofrecidas por la institución.
+
+Atributos:
+
+* ID Materia
+* Nombre de Materia
+* Categoría
+* Fecha de Inicio
+* Cupos
+* Precio
+* ID Profesor
+
+### Inscripción
+
+Representa la cabecera de una operación de inscripción realizada por un alumno.
+
+Cada inscripción almacena:
+
+* Alumno que realiza la inscripción.
+* Fecha de inscripción.
+* Método de pago.
+* Cantidad total de materias inscriptas.
+* Importe total de la operación.
+
+### Detalle_Inscripción
+
+Representa cada materia incluida dentro de una inscripción.
+
+Permite registrar múltiples materias dentro de una misma inscripción.
+
+Atributos:
+
+* ID Detalle
+* ID Inscripción
+* ID Materia
+* Precio Unitario
+
+---
+
+## Relaciones
+
+### Profesor - Materia
+
+Relación 1:N
+
+Un profesor puede dictar muchas materias.
+Cada materia tiene asignado un único profesor.
+
+### Alumno - Inscripción
+
+Relación 1:N
+
+Un alumno puede realizar múltiples inscripciones.
+Cada inscripción pertenece a un único alumno.
+
+### Inscripción - Detalle_Inscripción
+
+Relación 1:N
+
+Una inscripción puede contener varias materias.
+Cada detalle pertenece a una única inscripción.
+
+### Materia - Detalle_Inscripción
+
+Relación 1:N
+
+Una materia puede aparecer en múltiples detalles de inscripción.
+Cada detalle corresponde a una única materia.
+
+Conceptualmente existe una relación N:M entre Alumno y Materia, la cual se resuelve mediante las entidades Inscripción y Detalle_Inscripción.
+
+---
+
+## Funcionalidades Implementadas
+
+* Creación de tablas con restricciones.
+* Claves primarias y foráneas.
+* Validaciones mediante CHECK.
+* Inserción de datos de prueba.
+* Consultas básicas.
+* JOIN y LEFT JOIN.
+* GROUP BY y HAVING.
+* Subconsultas:
+
+  * Escalares
+  * IN
+  * EXISTS
+  * Correlacionadas
+* Vistas.
+* Procedimientos almacenados.
+* Triggers.
+* Normalización de la base de datos.
