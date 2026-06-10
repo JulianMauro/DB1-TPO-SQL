@@ -807,7 +807,7 @@ BEGIN
 End;
 Go
 
---5) Verificar inscripciones duplicadas a materia
+--5) Verificar inscripciones duplicadas por materia
 CREATE TRIGGER TR_Validar_Inscripcion_Duplicada On Detalle_Inscripcion
 AFTER Insert
 AS 
@@ -842,6 +842,134 @@ BEGIN
 End;
 Go
 
+--6) Actualizar total Inscripcion al agregar materias (de a muchas)
+CREATE TRIGGER TR_Actualizar_Total_Inscripcion_Al_Agregar
+ON Detalle_Inscripcion
+AFTER insert
+AS
+BEGIN
+    UPDATE i
+    SET total = (
+        SELECT SUM(d.precio_unitario)
+        FROM Detalle_Inscripcion d
+        WHERE d.id_inscripcion = i.id_inscripcion
+    )
+    FROM Inscripcion i
+    WHERE i.id_inscripcion IN (
+        SELECT DISTINCT id_inscripcion
+        FROM inserted
+    );
+END;
+GO
+
+--7) Actualizar total Inscripcion al quitar materias (de a muchas)
+CREATE TRIGGER TR_Actualizar_Total_Inscripcion_Al_Quitar
+ON Detalle_Inscripcion
+AFTER Delete
+AS
+BEGIN
+    UPDATE i
+    SET total = (
+        SELECT SUM(d.precio_unitario)
+        FROM Detalle_Inscripcion d
+        WHERE d.id_inscripcion = i.id_inscripcion
+    )
+    FROM Inscripcion i
+    WHERE i.id_inscripcion IN (
+        SELECT DISTINCT id_inscripcion
+        FROM deleted
+    );
+END;
+GO
+
+--8) Actualizar cantidad de cupos y validar que en efecto hayan disponibles
+CREATE TRIGGER TR_Validar_Cupos_Detalle_Inscripcion
+ON Detalle_Inscripcion
+AFTER insert
+AS
+BEGIN
+    IF EXISTS (
+        SELECT *
+        FROM inserted
+        JOIN Materia m
+            ON m.id_materia = inserted.id_materia
+        WHERE m.cupos <= 0
+    )
+    BEGIN
+        RAISERROR('Ya no hay mas cupos disponibles por lo menos para una materia',16,1);
+        Rollback transaction;
+        RETURN;
+    END;
+
+    UPDATE m
+    SET cupos = m.cupos - x.cantidad
+    FROM Materia m
+    JOIN (
+        SELECT id_materia, COUNT(*) AS cantidad
+        FROM inserted
+        GROUP BY id_materia
+    ) x
+        ON x.id_materia = m.id_materia;
+END;
+GO
+
+--9) Liberar cupos al eliminar un detalle inscripción
+CREATE TRIGGER TR_Liberar_Cupos_Detalle_Inscripcion
+ON Detalle_Inscripcion
+AFTER delete
+AS
+BEGIN
+    UPDATE m
+    set cupos = m.cupos + x.cantidad
+    FROM Materia m
+    JOIN (
+        SELECT id_materia, COUNT(*) AS cantidad
+        FROM deleted
+        Group BY id_materia
+    ) x
+        ON x.id_materia = m.id_materia;
+END;
+GO
+
+--10) Actualizar total al agregar inscripciones
+CREATE TRIGGER TR_Actualizar_Total_Inscripcion_Al_Agregar
+ON Detalle_Inscripcion
+AFTER insert
+AS
+BEGIN
+    UPDATE i
+    SET total = (
+        SELECT SUM(d.precio_unitario)
+        FROM Detalle_Inscripcion d
+        WHERE d.id_inscripcion = i.id_inscripcion
+    )
+    FROM Inscripcion i
+    WHERE i.id_inscripcion IN (
+        SELECT DISTINCT id_inscripcion
+        FROM inserted
+    );
+END;
+GO
+
+--11) Actualizar total al quitar inscripciones
+CREATE TRIGGER TR_Actualizar_Total_Inscripcion_Al_Eliminar
+ON Detalle_Inscripcion
+AFTER Delete
+AS
+Begin
+    UPDATE i
+    SET total = (
+        SELECT ISNULL(SUM(d.precio_unitario),0)
+        FROM Detalle_Inscripcion d
+        WHERE d.id_inscripcion = i.id_inscripcion
+    )
+    FROM Inscripcion i
+    Where i.id_inscripcion IN (
+        SELECT DISTINCT id_inscripcion
+        FROM deleted
+    );
+END;
+GO
 -------------------------------------------------------------------------
 -- PRUEBAS DE LOS PROCEDIMIENTOS ALMACENADOS (Etapa 7)
 
